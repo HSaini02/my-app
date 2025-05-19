@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth }       from './context/AuthContext';
-import Navbar            from './Components/NavBar';
-import Toast             from './Components/Toast';
+import Navbar            from './components/Navbar';
+import Toast             from './components/Toast';
+import './tailwind.css';
 import Home              from './pages/Home';
 import Auctions          from './pages/Auctions';
 import MyBids            from './pages/MyBids';
