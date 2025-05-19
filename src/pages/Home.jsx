@@ -1,8 +1,8 @@
 import React from 'react';
-import FeatureCard from '../components/FeatureCard';
-import AuctionCard  from '../components/AuctionCard';
-import Testimonials from '../components/Testimonials';
-import CTA          from '../components/CTA';
+import FeatureCard from '../Components/FeatureCard';
+import AuctionCard  from '../Components/AuctionCard';
+import Testimonials from '../Components/Testimonials';
+import CTA          from '../Components/CTA';
 
 export default function Home({ showToast, onNav }) {
   const features = [
