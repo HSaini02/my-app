@@ -27,7 +27,15 @@ export default function MyBids() {
               <tr key={i}>
                 <td className="px-6 py-4 border-b">{b.item}</td>
                 <td className="px-6 py-4 border-b">${b.bid}</td>
-                <td className="px-6 py-4 border-b">{b.status}</td>
+                <td className={`px-6 py-4 border-b ${
+                  b.status === 'Leading'
+                    ? 'text-green-600'
+                    : b.status === 'Outbid'
+                      ? 'text-red-600'
+                      : 'text-gray-800'
+                }`}>
+                  {b.status}
+                </td>
                 <td className="px-6 py-4 border-b">{b.timeLeft}</td>
               </tr>
             ))}
