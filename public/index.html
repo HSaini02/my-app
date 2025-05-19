@@ -1,43 +1,738 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#000000" />
-    <meta
-      name="description"
-      content="Web site created using create-react-app"
-    />
-    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
-    <!--
-      manifest.json provides metadata used when your web app is installed on a
-      user's mobile device or desktop. See https://developers.google.com/web/fundamentals/web-app-manifest/
-    -->
-    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
-    <!--
-      Notice the use of %PUBLIC_URL% in the tags above.
-      It will be replaced with the URL of the `public` folder during the build.
-      Only files inside the `public` folder can be referenced from the HTML.
+<head>
+    <!-- Character encoding and responsive viewport settings -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FairBid - Safe and Transparent Online Bidding</title>
 
-      Unlike "/favicon.ico" or "favicon.ico", "%PUBLIC_URL%/favicon.ico" will
-      work correctly both with client-side routing and a non-root public URL.
-      Learn how to configure a non-root public URL by running `npm run build`.
-    -->
-    <title>React App</title>
-  </head>
-  <body>
-    <noscript>You need to enable JavaScript to run this app.</noscript>
-    <div id="root"></div>
-    <!--
-      This HTML file is a template.
-      If you open it directly in the browser, you will see an empty page.
+    <!-- Tailwind CSS for utility-first styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Bootstrap Icons for iconography -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
 
-      You can add webfonts, meta tags, or analytics to this file.
-      The build step will place the bundled scripts into the <body> tag.
+    <style>
+        /* Use the Inter font throughout the body */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
 
-      To begin the development, run `npm start` or `yarn start`.
-      To create a production bundle, use `npm run build` or `yarn build`.
-    -->
-  </body>
+        /* Subtle hover effect on auction cards to lift them up */
+        .auction-card:hover {
+            transform: translateY(-5px);
+            transition: all 0.3s ease;
+        }
+
+        /* Styles for the toast notification container */
+        #toast {
+            display: none;  /* Hidden by default; shown via JS when needed */
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;  /* Ensure it appears above other content */
+        }
+
+        /* Accessibility: Make buttons and links clearly focusable */
+        button:focus,
+        a:focus {
+            outline: 2px solid rgb(239, 32, 239); /* Bright outline on focus */
+            outline-offset: 2px;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Toast Notification Element -->
+    <div id="toast"
+         class="bg-purple-500 text-white px-6 py-3 rounded-lg shadow-lg"
+         role="alert"
+         aria-live="assertive">
+        <!-- Placeholder for dynamic toast messages -->
+        <span id="toast-message"></span>
+    </div>
+
+    <!-- Top Navigation Bar -->
+    <nav class="bg-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex justify-between h-16">
+                <!-- Logo / Brand -->
+                <div class="flex-shrink-0 flex items-center">
+                    <a href="#"
+                       class="text-2xl font-bold text-purple-600">
+                        FairBid
+                    </a>
+                </div>
+
+                <!-- Desktop Menu Items -->
+                <div class="hidden md:flex items-center space-x-4">
+                    <!-- Navigation links trigger JS page swaps -->
+                    <a href="#"
+                       class="px-3 py-2 text-gray-700 hover:text-purple-600"
+                       onclick="showPage('home'); return false;">
+                        Home
+                    </a>
+                    <a href="#"
+                       class="px-3 py-2 text-gray-700 hover:text-purple-600"
+                       onclick="showPage('auctions'); return false;">
+                        Auctions
+                    </a>
+                    <a href="#"
+                       class="px-3 py-2 text-gray-700 hover:text-purple-600"
+                       onclick="showPage('myBids'); return false;">
+                        My Bids
+                    </a>
+                    <a href="#"
+                       class="px-3 py-2 text-gray-700 hover:text-purple-600"
+                       onclick="showPage('myAuctions'); return false;">
+                        My Auctions
+                    </a>
+                    <a href="#"
+                       class="px-3 py-2 text-gray-700 hover:text-purple-600"
+                       onclick="showPage('support'); return false;">
+                        Support
+                    </a>
+                    <!-- Login/Logout button toggles via JS when user state changes -->
+                    <button id="loginBtn"
+                            class="bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700"
+                            onclick="showPage('login'); return false;">
+                        Login
+                    </button>
+                </div>
+
+                <!-- Mobile menu toggle button (hamburger icon) -->
+                <div class="md:hidden flex items-center">
+                    <button aria-label="Toggle Mobile Menu"
+                            class="text-gray-600 hover:text-gray-900"
+                            onclick="toggleMobileMenu()">
+                        <i class="bi bi-list text-2xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Menu (hidden by default) -->
+        <div id="mobileMenu" class="hidden md:hidden">
+            <div class="px-2 pt-2 pb-3 space-y-1">
+                <!-- Same links as desktop, but stacked -->
+                <a href="#"
+                   class="block px-3 py-2 text-gray-700 hover:text-purple-600"
+                   onclick="showPage('home'); return false;">
+                    Home
+                </a>
+                <a href="#"
+                   class="block px-3 py-2 text-gray-700 hover:text-purple-600"
+                   onclick="showPage('auctions'); return false;">
+                    Auctions
+                </a>
+                <a href="#"
+                   class="block px-3 py-2 text-gray-700 hover:text-purple-600"
+                   onclick="showPage('myBids'); return false;">
+                    My Bids
+                </a>
+                <a href="#"
+                   class="block px-3 py-2 text-gray-700 hover:text-purple-600"
+                   onclick="showPage('myAuctions'); return false;">
+                    My Auctions
+                </a>
+                <a href="#"
+                   class="block px-3 py-2 text-gray-700 hover:text-purple-600"
+                   onclick="showPage('support'); return false;">
+                    Support
+                </a>
+                <button class="w-full text-left px-3 py-2 text-gray-700 hover:text-purple-600"
+                        onclick="showPage('login'); return false;">
+                    Login
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main id="pageContent">
+        <!-- Home Page Section -->
+        <section id="home" class="page active">
+            <div class="max-w-7xl mx-auto px-4 py-12">
+                <!-- Hero Heading -->
+                <h1 class="text-4xl font-bold text-center mb-8">
+                    Secure Online Auction System
+                </h1>
+
+                <!-- Feature Highlights -->
+                <div class="grid md:grid-cols-3 gap-8 mb-8">
+                    <!-- Secure Bidding Feature -->
+                    <div class="bg-white p-6 rounded-lg shadow-md">
+                        <i class="bi bi-shield-check text-4xl text-purple-600"></i>
+                        <h3 class="text-xl font-semibold mt-4">Secure Bidding</h3>
+                        <p class="mt-2 text-gray-600">
+                            End-to-end encryption and blockchain verification for every bid.
+                        </p>
+                    </div>
+                    <!-- Real-time Updates Feature -->
+                    <div class="bg-white p-6 rounded-lg shadow-md">
+                        <i class="bi bi-lightning text-4xl text-purple-600"></i>
+                        <h3 class="text-xl font-semibold mt-4">Real-time Updates</h3>
+                        <p class="mt-2 text-gray-600">
+                            Instant notifications and live bidding updates.
+                        </p>
+                    </div>
+                    <!-- Fraud Prevention Feature -->
+                    <div class="bg-white p-6 rounded-lg shadow-md">
+                        <i class="bi bi-graph-up text-4xl text-purple-600"></i>
+                        <h3 class="text-xl font-semibold mt-4">Fraud Prevention</h3>
+                        <p class="mt-2 text-gray-600">
+                            AI-powered monitoring and verification systems.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Featured Auctions Preview -->
+                <div class="mb-8">
+                    <h2 class="text-3xl font-bold mb-4">Featured Auctions</h2>
+                    <div class="grid md:grid-cols-3 gap-6">
+                        <!-- Static examples for illustration; replaced dynamically on load -->
+                        <div class="bg-white rounded-lg shadow-md overflow-hidden auction-card">
+                            <img src="https://images.unsplash.com/photo-1524592094714-0f0654e20314?auto=format&fit=crop&w=300&q=80"
+                                 alt="Vintage Watch"
+                                 class="w-full h-48 object-cover">
+                            <div class="p-4">
+                                <h3 class="text-lg font-semibold">Vintage Watch</h3>
+                                <p class="text-gray-600">Current Bid: $150</p>
+                                <p class="text-gray-600">Ends: 2024-01-01</p>
+                                <button onclick="placeBid(1)"
+                                        class="mt-2 bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 w-full">
+                                    Place Bid
+                                </button>
+                            </div>
+                        </div>
+                        <!-- Repeat for other sample auctions -->
+                        <div class="bg-white rounded-lg shadow-md overflow-hidden auction-card">
+                            <img src="https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?auto=format&fit=crop&w=300&q=80"
+                                 alt="Art Collection"
+                                 class="w-full h-48 object-cover">
+                            <div class="p-4">
+                                <h3 class="text-lg font-semibold">Art Collection</h3>
+                                <p class="text-gray-600">Current Bid: $500</p>
+                                <p class="text-gray-600">Ends: 2024-01-02</p>
+                                <button onclick="placeBid(2)"
+                                        class="mt-2 bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 w-full">
+                                    Place Bid
+                                </button>
+                            </div>
+                        </div>
+                        <div class="bg-white rounded-lg shadow-md overflow-hidden auction-card">
+                            <img src="https://images.unsplash.com/photo-1550226891-ef816aed4a98?auto=format&fit=crop&w=300&q=80"
+                                 alt="Antique Furniture"
+                                 class="w-full h-48 object-cover">
+                            <div class="p-4">
+                                <h3 class="text-lg font-semibold">Antique Furniture</h3>
+                                <p class="text-gray-600">Current Bid: $300</p>
+                                <p class="text-gray-600">Ends: 2024-01-03</p>
+                                <button onclick="placeBid(3)"
+                                        class="mt-2 bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 w-full">
+                                    Place Bid
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Testimonials Section -->
+                <div class="mb-8">
+                    <h2 class="text-3xl font-bold mb-4">What Our Users Say</h2>
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div class="bg-white p-6 rounded-lg shadow-md">
+                            <p class="text-gray-700 italic">
+                                "SecureAuction has made online bidding safe and transparent. I highly recommend it!"
+                            </p>
+                            <p class="mt-2 font-semibold">- John Doe</p>
+                        </div>
+                        <div class="bg-white p-6 rounded-lg shadow-md">
+                            <p class="text-gray-700 italic">
+                                "The real-time updates and secure bidding process gave me confidence in every transaction."
+                            </p>
+                            <p class="mt-2 font-semibold">- Jane Smith</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Call-to-Action Banner -->
+                <div class="bg-purple-600 text-white p-8 rounded-lg text-center">
+                    <h2 class="text-3xl font-bold mb-4">Ready to Start Bidding?</h2>
+                    <p class="text-lg mb-4">Join SecureAuction today and experience a secure and transparent online auction system.</p>
+                    <button onclick="showPage('register')"
+                            class="bg-white text-purple-600 px-6 py-3 rounded-md hover:bg-purple-50 hover:text-purple-700 font-semibold">
+                        Register Now
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Login Page Section -->
+        <section id="login" class="page hidden">
+            <div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+                <div class="max-w-md w-full space-y-8">
+                    <!-- Heading -->
+                    <h2 id="login-heading" class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+                        Sign in to your account
+                    </h2>
+                    <!-- Login Form -->
+                    <form class="mt-8 space-y-6" onsubmit="handleLogin(event)" aria-labelledby="login-heading">
+                        <div class="rounded-md shadow-sm -space-y-px">
+                            <!-- Email field -->
+                            <div>
+                                <label for="email-login" class="sr-only">Email address</label>
+                                <input id="email-login"
+                                       name="email"
+                                       type="email"
+                                       required
+                                       class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-purple-500 focus:border-purple-500 focus:z-10 sm:text-sm"
+                                       placeholder="Email address">
+                            </div>
+                            <!-- Password field -->
+                            <div>
+                                <label for="password-login" class="sr-only">Password</label>
+                                <input id="password-login"
+                                       name="password"
+                                       type="password"
+                                       required
+                                       class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-purple-500 focus:border-purple-500 focus:z-10 sm:text-sm"
+                                       placeholder="Password">
+                            </div>
+                        </div>
+                        <!-- Forgot password & registration links -->
+                        <div class="flex items-center justify-between">
+                            <a href="#"
+                               class="font-medium text-purple-600 hover:text-purple-500 text-sm"
+                               onclick="showPage('forgotPassword'); return false;">
+                                Forgot your password?
+                            </a>
+                            <a href="#"
+                               class="font-medium text-purple-600 hover:text-purple-500 text-sm"
+                               onclick="showPage('register'); return false;">
+                                Register new account
+                            </a>
+                        </div>
+                        <!-- Submit button -->
+                        <button type="submit"
+                                class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500">
+                            Sign in
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+        <!-- Register Page Section -->
+        <section id="register" class="page hidden">
+            <div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+                <div class="max-w-md w-full space-y-8">
+                    <!-- Heading -->
+                    <h2 id="register-heading" class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+                        Create new account
+                    </h2>
+                    <!-- Registration Form -->
+                    <form class="mt-8 space-y-6" onsubmit="handleRegister(event)" aria-labelledby="register-heading">
+                        <div class="rounded-md shadow-sm -space-y-px">
+                            <!-- Full name -->
+                            <div>
+                                <label for="name-register" class="sr-only">Full name</label>
+                                <input id="name-register"
+                                       name="name"
+                                       type="text"
+                                       required
+                                       class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-purple-500 focus:border-purple-500 focus:z-10 sm:text-sm"
+                                       placeholder="Full name">
+                            </div>
+                            <!-- Email -->
+                            <div>
+                                <label for="email-register" class="sr-only">Email address</label>
+                                <input id="email-register"
+                                       name="email"
+                                       type="email"
+                                       required
+                                       class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-purple-500 focus:border-purple-500 focus:z-10 sm:text-sm"
+                                       placeholder="Email address">
+                            </div>
+                            <!-- Password -->
+                            <div>
+                                <label for="password-register" class="sr-only">Password</label>
+                                <input id="password-register"
+                                       name="password"
+                                       type="password"
+                                       required
+                                       class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-purple-500 focus:border-purple-500 focus:z-10 sm:text-sm"
+                                       placeholder="Password">
+                            </div>
+                        </div>
+                        <!-- Submit button -->
+                        <button type="submit"
+                                class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500">
+                            Register
+                        </button>
+                        <!-- Link to login -->
+                        <p class="text-center">
+                            <a href="#"
+                               class="font-medium text-purple-600 hover:text-purple-500"
+                               onclick="showPage('login'); return false;">
+                                Already have an account? Sign in
+                            </a>
+                        </p>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+        <!-- Forgot Password Section -->
+        <section id="forgotPassword" class="page hidden">
+            <div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+                <div class="max-w-md w-full space-y-8">
+                    <!-- Heading -->
+                    <h2 id="forgot-password-heading" class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+                        Reset your password
+                    </h2>
+                    <!-- Reset form -->
+                    <form class="mt-8 space-y-6" onsubmit="handleForgotPassword(event)" aria-labelledby="forgot-password-heading">
+                        <div>
+                            <label for="email-reset" class="sr-only">Email address</label>
+                            <input id="email-reset"
+                                   name="email"
+                                   type="email"
+                                   required
+                                   class="appearance-none rounded relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
+                                   placeholder="Email address">
+                        </div>
+                        <!-- Submit button -->
+                        <button type="submit"
+                                class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500">
+                            Send reset link
+                        </button>
+                        <!-- Back to login -->
+                        <p class="text-center">
+                            <a href="#"
+                               class="font-medium text-purple-600 hover:text-purple-500"
+                               onclick="showPage('login'); return false;">
+                                Back to login
+                            </a>
+                        </p>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+        <!-- Active Auctions Page -->
+        <section id="auctions" class="page hidden">
+            <div class="max-w-7xl mx-auto px-4 py-8">
+                <h2 class="text-3xl font-bold mb-6">Active Auctions</h2>
+                <div class="grid md:grid-cols-3 gap-6">
+                    <!-- Dynamic auction cards inserted here by JS -->
+                </div>
+            </div>
+        </section>
+
+        <!-- My Bids Page -->
+        <section id="myBids" class="page hidden">
+            <div class="max-w-7xl mx-auto px-4 py-8">
+                <h2 class="text-3xl font-bold mb-6">My Bids</h2>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full bg-white">
+                        <thead>
+                            <tr>
+                                <th class="px-6 py-3 border-b-2 border-gray-300 text-left text-sm leading-4 text-gray-500 uppercase tracking-wider">Item</th>
+                                <th class="px-6 py-3 border-b-2 border-gray-300 text-left text-sm leading-4 text-gray-500 uppercase tracking-wider">Your Bid</th>
+                                <th class="px-6 py-3 border-b-2 border-gray-300 text-left text-sm leading-4 text-gray-500 uppercase tracking-wider">Status</th>
+                                <th class="px-6 py-3 border-b-2 border-gray-300 text-left text-sm leading-4 text-gray-500 uppercase tracking-wider">Time Left</th>
+                            </tr>
+                        </thead>
+                        <tbody id="myBidsTable">
+                            <!-- User's bids will appear here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- My Auctions Page -->
+        <section id="myAuctions" class="page hidden">
+            <div class="max-w-7xl mx-auto px-4 py-8">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-3xl font-bold">My Auctions</h2>
+                    <!-- Button to open a modal for creating a new auction -->
+                    <button onclick="showCreateAuctionModal()"
+                            class="bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700">
+                        Create New Auction
+                    </button>
+                </div>
+                <div class="grid md:grid-cols-3 gap-6" id="myAuctionsGrid">
+                    <!-- User's own auctions will be dynamically added here -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Support & FAQ Page -->
+        <section id="support" class="page hidden">
+            <div class="max-w-7xl mx-auto px-4 py-8">
+                <h2 class="text-3xl font-bold mb-6">Support & FAQ</h2>
+                <div class="grid md:grid-cols-2 gap-8">
+                    <!-- FAQ Column -->
+                    <div>
+                        <h3 class="text-xl font-semibold mb-4">Frequently Asked Questions</h3>
+                        <div class="space-y-4">
+                            <div class="border-b pb-4">
+                                <h4 class="font-medium mb-2">How secure is the bidding system?</h4>
+                                <p class="text-gray-600">
+                                    Our system uses end-to-end encryption and blockchain verification to ensure maximum security for all transactions.
+                                </p>
+                            </div>
+                            <div class="border-b pb-4">
+                                <h4 class="font-medium mb-2">What happens if I win an auction?</h4>
+                                <p class="text-gray-600">
+                                    You'll receive immediate notification and detailed instructions for completing the purchase securely.
+                                </p>
+                            </div>
+                            <!-- Add more Q&A as needed -->
+                        </div>
+                    </div>
+                    <!-- Contact Form Column -->
+                    <div>
+                        <h3 class="text-xl font-semibold mb-4">Contact Us</h3>
+                        <form onsubmit="handleSupport(event)"
+                              class="space-y-4"
+                              aria-labelledby="contact-us-heading">
+                            <div>
+                                <label for="name-support" class="block text-sm font-medium text-gray-700">Name</label>
+                                <input type="text"
+                                       id="name-support"
+                                       required
+                                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500">
+                            </div>
+                            <div>
+                                <label for="email-support" class="block text-sm font-medium text-gray-700">Email</label>
+                                <input type="email"
+                                       id="email-support"
+                                       required
+                                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500">
+                            </div>
+                            <div>
+                                <label for="message-support" class="block text-sm font-medium text-gray-700">Message</label>
+                                <textarea id="message-support"
+                                          required
+                                          rows="4"
+                                          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500">
+                                </textarea>
+                            </div>
+                            <button type="submit"
+                                    class="bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700">
+                                Send Message
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        /******************************************************
+         * JavaScript Section: Handles state, navigation,
+         * data initialization, and user interactions.
+         ******************************************************/
+
+        // Track if user is logged in and store user info
+        let isLoggedIn = false;
+        let currentUser = null;
+
+        /**
+         * showPage:
+         *   Hide all ".page" sections, then reveal the one
+         *   matching pageId. Also set focus for screen readers.
+         */
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(page => {
+                page.classList.add('hidden');
+                page.classList.remove('active');
+            });
+            const target = document.getElementById(pageId);
+            target.classList.remove('hidden');
+            target.classList.add('active');
+            target.focus();
+        }
+
+        /**
+         * toggleMobileMenu:
+         *   Show or hide the mobile navigation menu.
+         */
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobileMenu');
+            menu.classList.toggle('hidden');
+        }
+
+        /**
+         * showToast:
+         *   Display a toast notification with a message.
+         *   isSuccess toggles green (success) vs red (error).
+         */
+        function showToast(message, isSuccess = true) {
+            const toast = document.getElementById('toast');
+            toast.className = isSuccess
+                ? 'bg-purple-500 text-white px-6 py-3 rounded-lg shadow-lg'
+                : 'bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg';
+            document.getElementById('toast-message').textContent = message;
+            toast.style.display = 'block';
+            // Hide after 3 seconds
+            setTimeout(() => {
+                toast.style.display = 'none';
+            }, 3000);
+        }
+
+        /**
+         * handleLogin:
+         *   Simulate login flow. In a real app, replace this
+         *   with API calls and proper authentication.
+         */
+        function handleLogin(event) {
+            event.preventDefault();
+            const email = document.getElementById('email-login').value;
+            const password = document.getElementById('password-login').value;
+
+            // Simple truthy check; swap out with real logic
+            if (email && password) {
+                isLoggedIn = true;
+                currentUser = { email };
+                showToast('Successfully logged in!');
+                showPage('home');
+                document.getElementById('loginBtn').textContent = 'Logout';
+            }
+        }
+
+        /**
+         * handleRegister:
+         *   Simulate user registration. Replace this
+         *   with actual registration calls.
+         */
+        function handleRegister(event) {
+            event.preventDefault();
+            const name = document.getElementById('name-register').value;
+            const email = document.getElementById('email-register').value;
+            const password = document.getElementById('password-register').value;
+
+            if (name && email && password) {
+                showToast('Registration successful! Please login.');
+                showPage('login');
+            }
+        }
+
+        /**
+         * handleForgotPassword:
+         *   Simulate sending a password reset link.
+         */
+        function handleForgotPassword(event) {
+            event.preventDefault();
+            const email = document.getElementById('email-reset').value;
+
+            if (email) {
+                showToast('Password reset link sent to your email!');
+                showPage('login');
+            }
+        }
+
+        /**
+         * handleSupport:
+         *   Handle submission of the support/contact form.
+         */
+        function handleSupport(event) {
+            event.preventDefault();
+            showToast('Your message has been sent. We\'ll respond shortly!');
+        }
+
+        /**
+         * createAuctionCard:
+         *   Factory function to build an auction card DOM element
+         *   given auction data.
+         */
+        function createAuctionCard(auction) {
+            const div = document.createElement('div');
+            div.className = 'bg-white rounded-lg shadow-md overflow-hidden auction-card';
+            div.innerHTML = `
+                <img src="${auction.image}"
+                     alt="${auction.title}"
+                     class="w-full h-48 object-cover">
+                <div class="p-4">
+                    <h3 class="text-lg font-semibold">${auction.title}</h3>
+                    <p class="text-gray-600">Current Bid: $${auction.currentBid}</p>
+                    <p class="text-gray-600">Ends: ${auction.endTime}</p>
+                    <button onclick="placeBid(${auction.id})"
+                            class="mt-2 bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 w-full">
+                        Place Bid
+                    </button>
+                </div>
+            `;
+            return div;
+        }
+
+        /**
+         * initializeAuctions:
+         *   Populate the "Active Auctions" section with
+         *   sample data (or fetch real data in production).
+         */
+        function initializeAuctions() {
+            const sampleAuctions = [
+                {
+                    id: 1,
+                    title: "Vintage Watch",
+                    currentBid: 150,
+                    endTime: "2024-01-01",
+                    image: "https://images.unsplash.com/photo-1524592094714-0f0654e20314?auto=format&fit=crop&w=300&q=80"
+                },
+                {
+                    id: 2,
+                    title: "Art Collection",
+                    currentBid: 500,
+                    endTime: "2024-01-02",
+                    image: "https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?auto=format&fit=crop&w=300&q=80"
+                },
+                {
+                    id: 3,
+                    title: "Antique Furniture",
+                    currentBid: 300,
+                    endTime: "2024-01-03",
+                    image: "https://images.unsplash.com/photo-1550226891-ef816aed4a98?auto=format&fit=crop&w=300&q=80"
+                }
+            ];
+
+            // Append each sample auction to the auctions grid
+            const auctionsContainer = document.querySelector('#auctions .grid');
+            sampleAuctions.forEach(auction => {
+                auctionsContainer.appendChild(createAuctionCard(auction));
+            });
+        }
+
+        /**
+         * placeBid:
+         *   Handle user clicking "Place Bid". If not logged
+         *   in, redirect to login; otherwise show success.
+         */
+        function placeBid(auctionId) {
+            if (!isLoggedIn) {
+                showToast('Please login to place a bid', false);
+                showPage('login');
+                return;
+            }
+            showToast('Bid placed successfully!');
+        }
+
+        // Prevent unwanted zooming when scrolling with CTRL key
+        document.body.addEventListener('wheel', e => {
+            if (!e.ctrlKey) return;
+            e.preventDefault();
+            return;
+        }, { passive: false });
+
+        // On initial load: set up sample data and show home page
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeAuctions();
+            showPage('home');
+        });
+    </script>
+</body>
 </html>
