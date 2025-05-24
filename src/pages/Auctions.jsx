@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useAuth }        from '../context/AuthContext';
 import AuctionCard        from '../Components/AuctionCard';
 
-export const formatDate = (dateString) => {
+const formatDate = (dateString) => {
   const date = new Date(dateString);
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + ' ' + date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 };
